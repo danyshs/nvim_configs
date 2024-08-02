@@ -30,7 +30,7 @@ local function git_create_repo()
   local commit_command = string.format('git commit -m %s', commit_escaped_message)
   vim.fn.system(commit_command)
 
-  local dir_message = vim.fn.input('Enter new Directory Name: ')
+  local dir_message = vim.fn.input('Enter new Directory name: ')
   local dir_escaped_message = vim.fn.shellescape(dir_message)
   local push_dircommand = string.format('!gh repo create %s --private --source=. --remote=origin --push',
     dir_escaped_message)
