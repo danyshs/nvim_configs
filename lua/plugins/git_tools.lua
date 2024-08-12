@@ -1,43 +1,161 @@
+-- local function git_commit_and_push()
+--   vim.cmd('!git add .')
+--
+--   local commit_message = vim.fn.input('Enter commit message: ')
+--   local escaped_message = vim.fn.shellescape(commit_message)
+--   local commit_command = string.format('git commit -m %s', escaped_message)
+--   vim.fn.system(commit_command)
+--
+--   vim.cmd('!git push')
+-- end
+--
+-- local function git_detach()
+--   local dir_name = vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
+--   vim.fn.system('gh repo delete ' .. vim.fn.shellescape(dir_name) .. ' --yes')
+--   vim.fn.system('git remote remove origin')
+--
+--   -- Cross-platform removal of .git directory
+--   local git_dir = vim.fn.getcwd() .. '/.git'
+--   vim.fn.delete(git_dir, 'rf')
+-- end
+--
+-- local function git_create_repo()
+--   vim.fn.system('git init .')
+--   local readme_message = vim.fn.input('Enter README message: ')
+--   local file = io.open('README.md', 'w')
+--   if file then
+--     file:write(readme_message)
+--     file:close()
+--   else
+--     print("Failed to create README.md")
+--     return
+--   end
+--   vim.fn.system('git branch -m master main')
+--   vim.fn.system('git add .')
+--   local commit_message = vim.fn.input('Enter commit message: ')
+--   vim.fn.system('git commit -m ' .. vim.fn.shellescape(commit_message))
+--   local dir_name = vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
+--   vim.fn.system('gh repo create ' .. vim.fn.shellescape(dir_name) .. ' --private --source=. --remote=origin --push')
+-- end
+--
+
+local function notify(message, level)
+  vim.notify(message, level or vim.log.levels.INFO)
+end
+
 local function git_commit_and_push()
-  vim.cmd('!git add .')
+  local git_status = vim.fn.system('git status --porcelain')
+  if git_status == '' then
+    notify("No changes to commit", vim.log.levels.WARN)
+    return
+  end
+
+  vim.fn.system('git add .')
+  notify("Changes staged for commit")
 
   local commit_message = vim.fn.input('Enter commit message: ')
+  if commit_message == '' then
+    notify("Commit cancelled: No message provided", vim.log.levels.WARN)
+    return
+  end
+
   local escaped_message = vim.fn.shellescape(commit_message)
   local commit_command = string.format('git commit -m %s', escaped_message)
   vim.fn.system(commit_command)
+  notify("Changes committed: " .. commit_message)
 
-  vim.cmd('!git push')
+  local push_result = vim.fn.system('git push')
+  if vim.v.shell_error ~= 0 then
+    notify("Push failed: " .. push_result, vim.log.levels.ERROR)
+  else
+    notify("Changes pushed successfully")
+  end
 end
 
+
 local function git_detach()
-  vim.cmd('!gh repo delete . --yes')
-  vim.cmd('!git remote remove origin')
+  local dir_name = vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
+
+  -- Replace spaces with dashes
+  local formatted_dir_name = dir_name:gsub(" ", "-")
+
+  -- Check if .git directory exists
+  if vim.fn.isdirectory('.git') == 0 then
+    vim.notify("No git repository found in current directory", vim.log.levels.WARN)
+    return
+  end
+
+  -- Directly wrap the formatted directory name in quotes
+  local delete_command = 'gh repo delete "' .. formatted_dir_name .. '" --yes'
+
+  local delete_result = vim.fn.system(delete_command)
+  if vim.v.shell_error ~= 0 then
+    vim.notify("Failed to delete remote repository: " .. delete_result, vim.log.levels.ERROR)
+    return
+  end
+  vim.notify("Remote repository deleted")
+
+  vim.fn.system('git remote remove origin')
+  vim.notify("Remote 'origin' removed")
+
+  local git_dir = vim.fn.getcwd() .. '/.git'
+  vim.fn.delete(git_dir, 'rf')
+  vim.notify("Local .git directory removed")
 end
 
 local function git_create_repo()
-  vim.cmd('!git init .')
+  if vim.fn.isdirectory('.git') == 1 then
+    notify("Git repository already exists in current directory", vim.log.levels.WARN)
+    return
+  end
+
+  local init_result = vim.fn.system('git init .')
+  if vim.v.shell_error ~= 0 then
+    notify("Failed to initialize git repository: " .. init_result, vim.log.levels.ERROR)
+    return
+  end
+  notify("Git repository initialized")
 
   local readme_message = vim.fn.input('Enter README message: ')
-  local escaped_message = vim.fn.shellescape(readme_message)
-  local readme_command = string.format('touch README.md %s', escaped_message)
-  vim.fn.system(readme_command)
+  local file = io.open('README.md', 'w')
+  if file then
+    file:write(readme_message)
+    file:close()
+    notify("README.md created")
+  else
+    notify("Failed to create README.md", vim.log.levels.ERROR)
+    return
+  end
 
-  vim.cmd('!git add .')
-  vim.cmd('!git branch -m master main')
+  vim.fn.system('git branch -m master main')
+  notify("Default branch renamed to 'main'")
 
+  vim.fn.system('git add .')
   local commit_message = vim.fn.input('Enter commit message: ')
-  local commit_escaped_message = vim.fn.shellescape(commit_message)
-  local commit_command = string.format('git commit -m %s', commit_escaped_message)
-  vim.fn.system(commit_command)
+  if commit_message == '' then
+    notify("Commit cancelled: No message provided", vim.log.levels.WARN)
+    return
+  end
 
-  local dir_message = vim.fn.input('Enter new Directory name: ')
-  local dir_escaped_message = vim.fn.shellescape(dir_message)
-  local push_dircommand = string.format('!gh repo create %s --private --source=. --remote=origin --push',
-    dir_escaped_message)
-  vim.fn.system(push_dircommand)
+  local commit_result = vim.fn.system('git commit -m ' .. vim.fn.shellescape(commit_message))
+  if vim.v.shell_error ~= 0 then
+    notify("Failed to commit: " .. commit_result, vim.log.levels.ERROR)
+    return
+  end
+  notify("Initial commit created")
+
+  local dir_name = vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
+  local create_result = vim.fn.system('gh repo create ' ..
+    vim.fn.shellescape(dir_name) .. ' --private --source=. --remote=origin --push')
+  if vim.v.shell_error ~= 0 then
+    notify("Failed to create remote repository: " .. create_result, vim.log.levels.ERROR)
+  else
+    notify("Remote repository created and changes pushed")
+  end
 end
 
 return {
+
 
   --[[
     -- Index

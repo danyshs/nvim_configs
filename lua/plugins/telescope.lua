@@ -10,6 +10,21 @@ return {
       require("telescope").setup({
         -- Navigation actions
         defaults = {
+          hidden = true,
+          no_ignore = true,
+          layout_strategy = "vertical",
+          layout_config = {
+            height = 0.98,
+            width = 0.99,
+          },
+          find_files = {
+            prompt_title = 'Find Name of Files'
+          },
+          live_grep = {
+            grep_open_files = true,
+            prompt_title = 'Live Grep in Open Files',
+          },
+
           mappings = {
             n = {
               ["<C-b>"] = "move_selection_previous"
@@ -19,12 +34,6 @@ return {
             }
           }
         },
-        pickers = {
-          find_files = {
-            hidden = true,
-            no_ignore = true,
-          }
-        }
       })
       -- Menu Hotkeys (Alphabetical)
       vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = "[F]ind [B]uffers" })
@@ -40,10 +49,6 @@ return {
       vim.keymap.set('n', '<leader>fv', builtin.vim_options, { desc = "[F]ind [V]im Options" })
       vim.keymap.set('n', '<leader>fw', builtin.spell_suggest, { desc = "[F]ind [W]ord Spell Suggest" })
       vim.keymap.set('n', '<leader>f/', function()
-        builtin.live_grep {
-          grep_open_files = true,
-          prompt_title = 'Live Grep in Open Files',
-        }
       end, { desc = '[F]ind [/] in Open Files' })
     end
   },

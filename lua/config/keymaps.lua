@@ -1,11 +1,31 @@
 vim.g.mapleader = " "
 
-vim.keymap.set('n', '<leader>e', ':Neotree filesystem reveal left<CR>', { silent = true })
+vim.keymap.set("n", "<leader>e", ":Neotree filesystem reveal left<CR>", { silent = true })
 
 vim.keymap.set({ "x", "n", "s" }, "<leader>s", "<cmd>w<CR><ESC>", { desc = "Save File" })
 
 -- Highlight
-vim.keymap.set("n", "<leader>nh", "<cmd>nohl<cr>", { desc = "Quit Highlighted Text" })
+vim.keymap.set("n", "<leader>nh", "<cmd>nohl<cr>", { desc = "[N]o [H]ighlighted Text" })
+
+-- Function: Run
+local function run_file()
+	local filetype = vim.bo.filetype
+	local filepath = vim.fn.expand("%:p")
+
+	if filetype == "python" then
+		-- Create a horizontal split below and resize it to 10 lines, then run the Python file in the terminal
+		vim.cmd("below 10split | terminal python " .. filepath)
+	else
+		-- Print unhandled format message
+		print("Unhandled format")
+	end
+end
+
+-- Map the function to <leader>R
+vim.keymap.set("n", "<leader>R", run_file, { desc = "[R]un" })
+
+-- Map the function to <leader>R
+vim.keymap.set("n", "<leader>r", run_file, { desc = "[R]un" })
 
 -- Quit
 vim.keymap.set("n", "<leader>qc", "<cmd>q<cr>", { desc = "Quit current" })
@@ -52,9 +72,9 @@ vim.keymap.set("n", "<tab>", "<cmd>bn<cr>", { desc = "Next Tab" })
 vim.keymap.set("n", "<C-w><C-w>", "<cmd>bd<cr>", { desc = "Close Tab" })
 vim.keymap.set("n", "<S-tab>", "<cmd>bp<cr>", { desc = "Previous Tab" })
 
-vim.keymap.set('n', "<leader>bc", "<Cmd>BufferLineTogglePin<CR>", { desc = "Toggle Pin" })
-vim.keymap.set('n', "<leader>bC", "<Cmd>BufferLineGroupClose ungrouped<CR>", { desc = "Delete Non-Pinned Buffers" })
-vim.keymap.set('n', "<leader>bq", "<Cmd>BufferLineCloseOthers<CR>", { desc = "Delete Other Buffers" })
+vim.keymap.set("n", "<leader>bc", "<Cmd>BufferLineTogglePin<CR>", { desc = "Toggle Pin" })
+vim.keymap.set("n", "<leader>bC", "<Cmd>BufferLineGroupClose ungrouped<CR>", { desc = "Delete Non-Pinned Buffers" })
+vim.keymap.set("n", "<leader>bq", "<Cmd>BufferLineCloseOthers<CR>", { desc = "Delete Other Buffers" })
 
 -- SECTION START: Plugin Keymaps
 
@@ -78,7 +98,6 @@ vim.keymap.set("n", "<leader>ofl", "<leader>fl<leader>ol", { desc = "[O]pen [F]i
 -- vim.keymap.set('n', '<leader>dt', "<cmd>DapUiToggle<CR>", { desc = "[D]ebug: UI Toggle" })
 
 -- Zen Mode
-
 
 vim.keymap.set("n", "<leader>nb", "<cmd>:Noice telescope<CR>", { desc = "Show [N]otification [B]ar" })
 
